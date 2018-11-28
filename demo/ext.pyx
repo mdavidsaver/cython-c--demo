@@ -25,8 +25,6 @@ cdef extern from "mylib.h":
         const char *name() const
         void oops() except+
         PyRef ref
-        @staticmethod
-        Derived1* cast(Base*)
 
     # workaround for https://github.com/cython/cython/issues/2143
     ctypedef Derived1* Derived1p
