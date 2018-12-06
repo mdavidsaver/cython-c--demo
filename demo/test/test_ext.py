@@ -20,7 +20,6 @@ class TestGC(unittest.TestCase):
         H = Holder.make1(A)
 
         self.assertEqual(H.name, "Derived1")
-        self.assertIs(H.seethrough, A)
 
         # complete the loop
         A.loop = H
@@ -49,7 +48,6 @@ class TestGC(unittest.TestCase):
         H = Holder.make2()
 
         self.assertEqual(H.name, "Derived2")
-        self.assertIs(H.seethrough, None)
 
         h = weakref.ref(H)
         del H

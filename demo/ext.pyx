@@ -1,7 +1,9 @@
 # distutils: language = c++
 # cython: language_level=2
 
-from cpython.object cimport PyObject
+import cython
+
+from cpython.object cimport PyObject, PyTypeObject, traverseproc, visitproc
 
 from cython.operator cimport dereference as deref
 
@@ -34,42 +36,27 @@ cdef extern from "mylib.h":
         const char *name() const
         void oops() except+
 
+@cython.no_gc_clear # pretend we can't break the association through our shared_ptr
 cdef class Holder:
     # Reference to c++ object
     cdef shared_ptr[Base] ptr
-    # each time self.ptr is retargeted, we inspect the new pointer
-    # to see if it is a Derived1.  If so, we store an extra reference here
-    # so the garbage collector can "see through" the shared_ptr
-    cdef public object seethrough
+
+    # force generation of tp_traverse, otherwise unused
+    cdef object dummy
+
     cdef object __weakref__
     __slot__ = () # prevent creation of unexpected attributes
 
-    def __cinit__(self):
-        self.seethrough = None
-
-    # helper method
-    cdef setPtr(self, shared_ptr[Base] ptr):
-        cdef Derived1* d1 = dynamic_cast[Derived1p](ptr.get()) # Derived1.cast(ptr.get())
-        self.ptr = ptr
-        if d1 and d1.ref.obj:
-            self.seethrough = static_cast[object](d1.ref.obj)
-        else:
-            self.seethrough = None
-
     @staticmethod
     def make1(obj):
-        cdef shared_ptr[Base] ptr
-        ptr.reset(new Derived1(<PyObject*>obj))
         I = Holder()
-        I.setPtr(ptr)
+        I.ptr.reset(new Derived1(<PyObject*>obj))
         return I
 
     @staticmethod
     def make2():
-        cdef shared_ptr[Base] ptr
-        ptr.reset(new Derived2())
         I = Holder()
-        I.setPtr(ptr)
+        I.ptr.reset(new Derived2())
         return I
 
     @property
@@ -82,3 +69,29 @@ cdef class Holder:
     @staticmethod
     def count():
         return Base.count()
+
+# We will insert our own tp_traverse to the Holder type.
+# Store the original here so we can call it later
+cdef traverseproc holder_base_traverse
+
+# our replacement
+cdef int holder_traverse(PyObject* raw, visitproc visit, void* arg):
+    cdef int ret = 0
+    cdef Holder self = <Holder>raw
+    cdef Derived1* derv
+
+    if self.ptr: # shared pointer may be null
+        derv = dynamic_cast[Derived1p](self.ptr.get())
+        if derv and derv.ref.obj: # may not point to Derived1, or maybe python ref is null
+            visit(derv.ref.obj, arg)
+
+    # call into the generated type
+    ret = holder_base_traverse(raw, visit, arg)
+
+    return ret
+
+cdef PyTypeObject* holder = <PyTypeObject*>Holder
+
+holder_base_traverse = holder.tp_traverse
+assert holder_base_traverse!=NULL
+holder.tp_traverse = holder_traverse
