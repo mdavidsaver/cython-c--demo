@@ -12,5 +12,5 @@ install:
   - python --version
   - python -m pip install -r $REQUIREMENTS
 script:
-  - python -m pip install .
+  - python setup.py build_ext -i
   - python -m nose demo
