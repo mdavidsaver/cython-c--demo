@@ -75,7 +75,8 @@ cdef class Holder:
 cdef traverseproc holder_base_traverse
 
 # our replacement
-cdef int holder_traverse(PyObject* raw, visitproc visit, void* arg):
+#   users of older cython (eg. 0.25) would need to remove "except -1"
+cdef int holder_traverse(PyObject* raw, visitproc visit, void* arg) except -1:
     cdef int ret = 0
     cdef Holder self = <Holder>raw
     cdef Derived1* derv
@@ -94,4 +95,5 @@ cdef PyTypeObject* holder = <PyTypeObject*>Holder
 
 holder_base_traverse = holder.tp_traverse
 assert holder_base_traverse!=NULL
+
 holder.tp_traverse = holder_traverse
