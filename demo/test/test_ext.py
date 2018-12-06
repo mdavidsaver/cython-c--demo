@@ -19,7 +19,7 @@ class TestGC(unittest.TestCase):
         A = Arbitrary()
         H = Holder.make1(A)
 
-        self.assertEqual(H.name, "Derived1")
+        self.assertEqual(H.name, b"Derived1")
 
         # complete the loop
         A.loop = H
@@ -47,7 +47,7 @@ class TestGC(unittest.TestCase):
     def test_two(self):
         H = Holder.make2()
 
-        self.assertEqual(H.name, "Derived2")
+        self.assertEqual(H.name, b"Derived2")
 
         h = weakref.ref(H)
         del H
