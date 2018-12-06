@@ -1,0 +1,16 @@
+language: python
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  - "pypy3.5"
+env:
+  - REQUIREMENTS=requirements-latest.txt
+  - REQUIREMENTS=requirements-deb9.txt
+install:
+  - python --version
+  - python -m pip install -r $REQUIREMENTS
+script:
+  - python -m pip install .
+  - python -m nose demo
