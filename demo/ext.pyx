@@ -41,11 +41,11 @@ cdef class Holder:
     # Reference to c++ object
     cdef shared_ptr[Base] ptr
 
-    # force generation of tp_traverse, otherwise unused
+    # force generation of tp_traverse, otherwise unused.  Not public.
     cdef object dummy
 
+    # test code uses weakref
     cdef object __weakref__
-    __slot__ = () # prevent creation of unexpected attributes
 
     @staticmethod
     def make1(obj):
@@ -85,7 +85,7 @@ cdef int holder_traverse(PyObject* raw, visitproc visit, void* arg):
         if derv and derv.ref.obj: # may not point to Derived1, or maybe python ref is null
             visit(derv.ref.obj, arg)
 
-    # call into the generated type
+    # call into the generated method.  Doesn't currently do anything as 'dummy' will never be set.
     ret = holder_base_traverse(raw, visit, arg)
 
     return ret
